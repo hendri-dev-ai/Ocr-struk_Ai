@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI OCR Expense Tracker - Upstage AI (Portfolio Demo)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .gradient-text { background: linear-gradient(135deg, #818cf8 0%, #c084fc 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .drop-zone { transition: all 0.3s ease; border: 2px dashed rgba(255, 255, 255, 0.2); }
+        .drop-zone.active { border-color: #818cf8; background: rgba(129, 140, 248, 0.1); }
+        @keyframes pulse-soft { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        .loading { animation: pulse-soft 2s infinite; }
+        .sample-card { cursor: pointer; transition: all 0.3s ease; }
+        .sample-card:hover { transform: translateY(-5px); border-color: #818cf8; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-start p-6 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-800 via-slate-950 to-black">
+
+    <header class="text-center mb-8 pt-10">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-bold uppercase tracking-widest mb-4">
+            <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+            Interactive Portfolio Demo
+        </div>
+        <h1 class="text-5xl font-extrabold mb-4 tracking-tight"><span class="gradient-text">OCR Expense AI</span></h1>
+        <p class="text-slate-400 max-w-2xl mx-auto">Sistem AI ekstraksi data struk belanja menggunakan Upstage OCR dan Solar LLM. <br><span class="text-slate-500 text-sm">(Versi simulasi statis untuk demonstrasi portofolio)</span></p>
+    </header>
+
+    <main class="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        <!-- Left: Upload Section -->
+        <section class="glass p-8 rounded-3xl shadow-2xl flex flex-col">
+            <div class="w-full flex items-center justify-between mb-6">
+                <h2 class="text-xl font-semibold flex items-center gap-2">
+                    <i data-lucide="upload-cloud" class="text-indigo-400"></i> Upload / Pilih Struk
+                </h2>
+            </div>
+
+            <div id="drop-zone" class="drop-zone w-full aspect-video rounded-2xl flex flex-col items-center justify-center cursor-pointer p-6 mb-6">
+                <i data-lucide="file-text" class="w-16 h-16 text-slate-500 mb-4"></i>
+                <p class="text-slate-300 font-medium text-center">Klik atau tarik file ke sini</p>
+                <p class="text-slate-500 text-sm mt-2">(Simulasi proses AI)</p>
+                <input type="file" id="file-input" class="hidden" accept=".jpg,.jpeg,.png,.pdf">
+            </div>
+
+            <div id="file-info" class="hidden w-full p-4 bg-slate-800/50 rounded-xl mb-6 flex items-center justify-between border border-slate-700">
+                <div class="flex items-center gap-3">
+                    <i data-lucide="paperclip" class="text-indigo-400 w-5 h-5"></i>
+                    <span id="filename-display" class="text-sm font-medium truncate max-w-[200px]">document.jpg</span>
+                </div>
+                <button onclick="resetFile()" class="text-slate-400 hover:text-red-400 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Sample Receipts -->
+            <div class="mb-6">
+                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-3">Coba dengan contoh struk:</p>
+                <div class="grid grid-cols-4 gap-3">
+                    <div onclick="useSample('indo4.jpg', 'Indomaret')" class="sample-card border border-white/5 rounded-xl overflow-hidden aspect-square bg-slate-800/30">
+                        <img src="asset/indo4.jpg" class="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity" alt="Indomaret">
+                    </div>
+                    <div onclick="useSample('stru21.jpeg', 'Alfamart')" class="sample-card border border-white/5 rounded-xl overflow-hidden aspect-square bg-slate-800/30">
+                        <img src="asset/stru21.jpeg" class="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity" alt="Alfamart">
+                    </div>
+                    <div onclick="useSample('struk20.jpeg', 'Starbucks')" class="sample-card border border-white/5 rounded-xl overflow-hidden aspect-square bg-slate-800/30">
+                        <img src="asset/struk20.jpeg" class="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity" alt="Starbucks">
+                    </div>
+                    <div onclick="useSample('struk22.jpeg', 'Pertamina')" class="sample-card border border-white/5 rounded-xl overflow-hidden aspect-square bg-slate-800/30">
+                        <img src="asset/struk22.jpeg" class="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity" alt="Pertamina">
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="uploadFile()" id="process-btn" disabled class="w-full py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 font-bold text-lg shadow-lg shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2">
+                <i data-lucide="zap" class="w-5 h-5"></i> MULAI EKSTRAKSI AI
+            </button>
+        </section>
+
+        <!-- Right: Result Section -->
+        <section class="glass p-8 rounded-3xl shadow-2xl flex flex-col">
+            <div class="w-full flex items-center justify-between mb-6">
+                <h2 class="text-xl font-semibold flex items-center gap-2">
+                    <i data-lucide="database" class="text-purple-400"></i> Hasil AI Extraction
+                </h2>
+                <div id="status-badge" class="hidden px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Simulation Success</div>
+            </div>
+
+            <div id="result-container" class="flex-grow bg-slate-900/50 rounded-2xl p-6 overflow-auto border border-slate-800 font-mono text-sm min-h-[400px] relative">
+                <div id="empty-state" class="absolute inset-0 flex flex-col items-center justify-center text-slate-600 text-center p-8">
+                    <i data-lucide="cpu" class="w-16 h-16 mb-4 opacity-10"></i>
+                    <p>Sistem siap menganalisis dokumen...</p>
+                    <p class="text-[12px] mt-2 opacity-50 italic">Pilih file atau klik contoh struk untuk simulasi.</p>
+                </div>
+                
+                <div id="loading-state" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-slate-950/80 z-10 rounded-2xl">
+                    <div class="w-12 h-12 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin mb-4"></div>
+                    <p class="font-semibold text-indigo-400 loading">AI Upstage sedang memproses dokumen...</p>
+                    <p class="text-[10px] text-slate-500 mt-2">Mengekstrak OCR & Segmentasi Data...</p>
+                </div>
+
+                <div id="result-display" class="hidden">
+                    <div class="flex justify-between items-center mb-4 pb-4 border-b border-white/5">
+                        <span class="text-slate-500 text-xs">AI STRUCTURED JSON</span>
+                        <button onclick="copyJSON()" class="flex items-center gap-1 text-[10px] text-slate-400 hover:text-white">
+                            <i data-lucide="copy" class="w-3 h-3"></i> Copy JSON
+                        </button>
+                    </div>
+                    <pre id="json-output" class="text-indigo-300 whitespace-pre-wrap leading-relaxed text-[12px]"></pre>
+
+                    <!-- Summary Cards -->
+                    <div class="grid grid-cols-2 gap-4 mt-8">
+                        <div class="bg-indigo-500/10 border border-indigo-500/20 p-4 rounded-xl">
+                            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">Total Biaya</p>
+                            <p id="sum-total" class="text-xl font-bold text-indigo-300">Rp 0</p>
+                        </div>
+                        <div class="bg-purple-500/10 border border-purple-500/20 p-4 rounded-xl">
+                            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">Nama Vendor</p>
+                            <p id="sum-vendor" class="text-xl font-bold text-purple-300 truncate">-</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- History Section -->
+    <section class="w-full max-w-6xl mt-12 glass p-8 rounded-3xl shadow-2xl mb-20">
+        <div class="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
+            <h2 class="text-2xl font-bold flex items-center gap-2">
+                <i data-lucide="history" class="text-indigo-400"></i> Log Riwayat (Browser Storage)
+            </h2>
+            
+            <div class="flex items-center gap-3 w-full md:w-auto">
+                <div class="relative flex-1 md:w-64">
+                    <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"></i>
+                    <input type="text" id="search-date" placeholder="Cari nama vendor..." 
+                        oninput="loadHistory()"
+                        class="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm focus:border-indigo-500 outline-none transition-all">
+                </div>
+                <button onclick="loadHistory()" class="p-2 rounded-lg hover:bg-white/5 transition-colors border border-white/10">
+                    <i data-lucide="refresh-cw" class="w-5 h-5 text-slate-400"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead class="text-[10px] text-slate-500 font-bold uppercase tracking-widest border-b border-white/5">
+                    <tr>
+                        <th class="pb-4 px-4">Tanggal</th>
+                        <th class="pb-4 px-4">Vendor</th>
+                        <th class="pb-4 px-4">Total</th>
+                        <th class="pb-4 px-4">Metode</th>
+                        <th class="pb-4 px-4">Pajak</th>
+                        <th class="pb-4 px-4">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="history-body" class="divide-y divide-white/5">
+                    <!-- Rows will be added here -->
+                </tbody>
+            </table>
+        </div>
+        <p class="text-center text-slate-600 text-[10px] mt-8 uppercase tracking-[0.2em]">Data disimpan secara lokal di browser Anda</p>
+    </section>
+
+    <!-- Edit Modal -->
+    <div id="edit-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div class="glass w-full max-w-lg rounded-3xl p-8 shadow-2xl">
+            <div class="flex items-center justify-between mb-8">
+                <h3 class="text-xl font-bold flex items-center gap-2">
+                    <i data-lucide="edit-3" class="text-indigo-400"></i> Edit Transaksi
+                </h3>
+                <button onclick="closeEditModal()" class="text-slate-400 hover:text-white"><i data-lucide="x"></i></button>
+            </div>
+            
+            <form id="edit-form" class="space-y-4">
+                <input type="hidden" id="edit-id">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] uppercase font-bold text-slate-500 mb-1">Tanggal</label>
+                        <input type="text" id="edit-tanggal" class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] uppercase font-bold text-slate-500 mb-1">Vendor</label>
+                        <input type="text" id="edit-vendor" class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[10px] uppercase font-bold text-slate-500 mb-1">Total (Rp)</label>
+                    <input type="number" id="edit-total" class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] uppercase font-bold text-slate-500 mb-1">Metode</label>
+                        <input type="text" id="edit-metode" class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] uppercase font-bold text-slate-500 mb-1">Pajak</label>
+                        <input type="number" id="edit-pajak" class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none">
+                    </div>
+                </div>
+                <div class="pt-4 flex gap-4">
+                    <button type="button" onclick="closeEditModal()" class="flex-1 py-3 rounded-xl bg-slate-800 font-bold hover:bg-slate-700 transition-all">BATAL</button>
+                    <button type="submit" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 font-bold hover:scale-[1.02] transition-all">SIMPAN PERUBAHAN</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileInfo = document.getElementById('file-info');
+        const filenameDisplay = document.getElementById('filename-display');
+        const processBtn = document.getElementById('process-btn');
+        let selectedFile = null;
+
+        // Mock Storage Controller
+        const Storage = {
+            getKey: () => 'ocr_expenses_demo',
+            getAll: function() {
+                const data = localStorage.getItem(this.getKey());
+                return data ? JSON.parse(data) : this.initSeed();
+            },
+            initSeed: function() {
+                const seed = [
+                    { id: Date.now()-1000, tanggal: '2024-03-31', vendor: 'Indomaret Point', total: 66000, metode_pembayaran: 'Tunai', diskon: 0, pajak: 0 },
+                    { id: Date.now()-2000, tanggal: '2024-03-30', vendor: 'Starbucks Coffee', total: 58500, metode_pembayaran: 'Credit Card', diskon: 0, pajak: 5000 },
+                    { id: Date.now()-3000, tanggal: '2024-03-29', vendor: 'Alfamart', total: 24500, metode_pembayaran: 'QRIS', diskon: 1500, pajak: 0 }
+                ];
+                localStorage.setItem(this.getKey(), JSON.stringify(seed));
+                return seed;
+            },
+            save: function(expenses) {
+                localStorage.setItem(this.getKey(), JSON.stringify(expenses));
+            },
+            add: function(expense) {
+                const expenses = this.getAll();
+                expense.id = Date.now();
+                expenses.unshift(expense);
+                this.save(expenses);
+                return expense;
+            },
+            update: function(id, data) {
+                const expenses = this.getAll();
+                const index = expenses.findIndex(e => e.id == id);
+                if (index !== -1) {
+                    expenses[index] = { ...expenses[index], ...data };
+                    this.save(expenses);
+                    return true;
+                }
+                return false;
+            },
+            delete: function(id) {
+                const expenses = this.getAll().filter(e => e.id != id);
+                this.save(expenses);
+            },
+            get: function(id) {
+                return this.getAll().find(e => e.id == id);
+            }
+        };
+
+        // UI Logic
+        document.addEventListener('DOMContentLoaded', loadHistory);
+
+        dropZone.onclick = () => fileInput.click();
+        fileInput.onchange = (e) => (e.target.files.length > 0) && handleFile(e.target.files[0]);
+
+        dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('active'); };
+        dropZone.ondragleave = () => dropZone.classList.remove('active');
+        dropZone.ondrop = (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('active');
+            if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
+        };
+
+        function handleFile(file) {
+            selectedFile = file;
+            filenameDisplay.innerText = file.name;
+            fileInfo.classList.remove('hidden');
+            dropZone.classList.add('hidden');
+            processBtn.disabled = false;
+        }
+
+        function useSample(fileName, vendorName) {
+            handleFile({ name: fileName });
+            // Highlight the selection visual effect would be nice but simple for now
+        }
+
+        function resetFile() {
+            selectedFile = null;
+            fileInput.value = '';
+            fileInfo.classList.add('hidden');
+            dropZone.classList.remove('hidden');
+            processBtn.disabled = true;
+            document.getElementById('result-display').classList.add('hidden');
+            document.getElementById('empty-state').classList.remove('hidden');
+            document.getElementById('status-badge').classList.add('hidden');
+        }
+
+        async function uploadFile() {
+            if (!selectedFile) return;
+
+            document.getElementById('loading-state').classList.remove('hidden');
+            document.getElementById('empty-state').classList.add('hidden');
+            processBtn.disabled = true;
+
+            // Simulate AI Processing Delay
+            setTimeout(() => {
+                const mockResult = getMockResponse(selectedFile.name);
+                displayResult(mockResult);
+                Storage.add(mockResult);
+                loadHistory();
+
+                document.getElementById('loading-state').classList.add('hidden');
+                processBtn.disabled = false;
+            }, 2000);
+        }
+
+        function getMockResponse(fileName) {
+            const today = new Date().toISOString().split('T')[0];
+            
+            // Logic based on sample file names
+            if (fileName.includes('indo')) {
+                return { tanggal: today, total: 66000, vendor: 'Indomaret Point', metode_pembayaran: 'Tunai', diskon: 0, pajak: 0, jumlah_bayar: 100000, kembalian: 34000 };
+            } else if (fileName.includes('stru21')) {
+                return { tanggal: today, total: 25500, vendor: 'Alfamart Jaya', metode_pembayaran: 'QRIS', diskon: 0, pajak: 0, jumlah_bayar: 25500, kembalian: 0 };
+            } else if (fileName.includes('struk20')) {
+                return { tanggal: today, total: 58000, vendor: 'Starbucks Coffee', metode_pembayaran: 'Credit Card', diskon: 0, pajak: 5800, jumlah_bayar: 63800, kembalian: 0 };
+            } else if (fileName.includes('struk22')) {
+                return { tanggal: today, total: 150000, vendor: 'Pertamina SPBU', metode_pembayaran: 'Tunai', diskon: 0, pajak: 15000, jumlah_bayar: 200000, kembalian: 50000 };
+            }
+            
+            // Random fallbacks
+            return {
+                tanggal: today,
+                total: Math.floor(Math.random() * 500000) + 10000,
+                vendor: 'Vendor Terdeteksi',
+                metode_pembayaran: 'Tunai',
+                diskon: 0,
+                pajak: 0,
+                jumlah_bayar: 1000000,
+                kembalian: 0
+            };
+        }
+
+        function displayResult(data) {
+            document.getElementById('result-display').classList.remove('hidden');
+            document.getElementById('status-badge').classList.remove('hidden');
+            document.getElementById('json-output').innerText = JSON.stringify(data, null, 4);
+            document.getElementById('sum-total').innerText = 'Rp ' + Number(data.total).toLocaleString('id-ID');
+            document.getElementById('sum-vendor').innerText = data.vendor;
+            lucide.createIcons();
+        }
+
+        function loadHistory() {
+            const searchVal = document.getElementById('search-date').value.toLowerCase();
+            const expenses = Storage.getAll();
+            const tbody = document.getElementById('history-body');
+            tbody.innerHTML = '';
+
+            const filtered = expenses.filter(ex => 
+                ex.vendor.toLowerCase().includes(searchVal) || 
+                ex.tanggal.includes(searchVal)
+            );
+
+            filtered.forEach(ex => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-white/5 transition-colors group';
+                row.innerHTML = `
+                    <td class="py-4 px-4 font-medium">${ex.tanggal}</td>
+                    <td class="py-4 px-4 text-indigo-300 font-semibold">${ex.vendor}</td>
+                    <td class="py-4 px-4 font-bold">Rp ${Number(ex.total).toLocaleString('id-ID')}</td>
+                    <td class="py-4 px-4 opacity-70">${ex.metode_pembayaran}</td>
+                    <td class="py-4 px-4 opacity-70">Rp ${Number(ex.pajak).toLocaleString('id-ID')}</td>
+                    <td class="py-4 px-4">
+                        <div class="flex gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="openEditModal(${ex.id})" class="text-amber-400 hover:text-amber-300"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+                            <button onclick="deleteExpense(${ex.id})" class="text-red-400 hover:text-red-300"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            lucide.createIcons();
+        }
+
+        function deleteExpense(id) {
+            if (confirm("Hapus data ini?")) {
+                Storage.delete(id);
+                loadHistory();
+            }
+        }
+
+        function openEditModal(id) {
+            const data = Storage.get(id);
+            if (!data) return;
+            
+            document.getElementById('edit-id').value = data.id;
+            document.getElementById('edit-tanggal').value = data.tanggal;
+            document.getElementById('edit-vendor').value = data.vendor;
+            document.getElementById('edit-total').value = data.total;
+            document.getElementById('edit-metode').value = data.metode_pembayaran;
+            document.getElementById('edit-pajak').value = data.pajak;
+            
+            document.getElementById('edit-modal').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').classList.add('hidden');
+        }
+
+        document.getElementById('edit-form').onsubmit = (e) => {
+            e.preventDefault();
+            const id = document.getElementById('edit-id').value;
+            const updated = {
+                tanggal: document.getElementById('edit-tanggal').value,
+                vendor: document.getElementById('edit-vendor').value,
+                total: Number(document.getElementById('edit-total').value),
+                metode_pembayaran: document.getElementById('edit-metode').value,
+                pajak: Number(document.getElementById('edit-pajak').value)
+            };
+
+            Storage.update(id, updated);
+            closeEditModal();
+            loadHistory();
+        };
+
+        function copyJSON() {
+            const text = document.getElementById('json-output').innerText;
+            navigator.clipboard.writeText(text).then(() => alert('JSON Disalin!'));
+        }
+    </script>
+</body>
+</html>
